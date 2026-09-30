@@ -1,0 +1,40 @@
+# Local environment and credentials; the example must contain placeholders only.
+.env
+.env.*
+!.env.example
+.vercel/
+secrets/
+.secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+
+# Raw API exports and sensitive integration evidence.
+*.postman_collection.json
+*.postman_environment.json
+*.postman_globals.json
+private/
+local-evidence/
+*.har
+*.log
+logs/
+
+# Application dependencies, build outputs, and local tooling.
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
