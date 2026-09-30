@@ -14,6 +14,7 @@ Supported design journeys:
 ## Documentation
 
 - [Software design](docs/software-design.md): architecture, journeys, internal interfaces, storage, security, deployment, and acceptance matrix.
+- [Merchant connectivity and deployment model](docs/software-design.md#merchant-connectivity-and-deployment-model): partner-to-Tapsys network path and fixed public outbound IP requirement.
 - [Provider API contract](docs/provider-api-contract.md): collection-derived requests, sanitized examples, evidence boundaries, and live integration dependencies.
 - [Repository instructions](AGENTS.md): mandatory version allocation rules.
 

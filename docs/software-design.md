@@ -30,6 +30,47 @@ flowchart LR
 
 Use short HTTP requests and persisted state, not a function held open for the 120-second countdown. PostgreSQL connections use a provider-supported pooled connection string. No WebSocket service or durable background worker is required for the first implementation.
 
+### Merchant connectivity and deployment model
+
+This merchant-facing view shows the partner-to-Tapsys network path from the supplied reference image, `1001217925.png` ("Raast E-commerce API Integration"). It complements the application architecture above.
+
+```mermaid
+flowchart LR
+    subgraph Partner["PARTNER ENVIRONMENT"]
+        P["Partner Server<br/>Fixed Public Outbound IP"]
+    end
+
+    subgraph Edge["CLOUDFLARE EDGE"]
+        C["Cloudflare<br/>IP Allowlisting<br/>DDoS Protection"]
+    end
+
+    subgraph Tapsys["TAPSYS INFRASTRUCTURE"]
+        N["NGINX<br/>Reverse Proxy"]
+        A["Tapsys API Server<br/>Raast E-commerce APIs"]
+    end
+
+    P -->|API request| C
+    C --> N
+    N --> A
+
+    A -.->|API response| N
+    N -.-> C
+    C -.-> P
+
+    style Partner fill:#eaf0ff,stroke:#6789c4
+    style Edge fill:#fff1e4,stroke:#e89542
+    style Tapsys fill:#e7f5f2,stroke:#259d8f
+
+    linkStyle 0,1,2 stroke:#009b94,stroke-width:3px
+    linkStyle 3,4,5 stroke:#8798b5,stroke-width:2px
+```
+
+- **Merchant requirement:** share the server's **fixed public outbound IP** with Tapsys for Cloudflare allowlisting.
+- **Arrow legend:** solid arrows represent API requests; dashed arrows represent API responses returning along the same path.
+- **Payment callbacks:** the responses shown here are distinct from asynchronous payment callbacks, which remain covered by the application and checkout diagrams.
+- **Evidence boundary:** this topology comes from the supplied reference image; actual deployment and connectivity have not been independently verified.
+- **Vercel deployment:** the outbound connectivity configuration must satisfy this fixed-IP requirement before live integration. IP provisioning, Tapsys allowlist registration, and connectivity testing remain outstanding under [dependency P10](provider-api-contract.md#provider-clarification-checklist).
+
 ## 3. Checkout journeys
 
 ### 3.1 Dynamic QR
