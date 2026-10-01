@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate host-only demo secrets; never prints or replaces existing secrets."""
 import os
+import re
 from pathlib import Path
 import secrets
 import sys
@@ -11,7 +12,7 @@ if not os.path.ismount('/backupfiles'):
 target = base / '.env'
 if target.exists():
     raise SystemExit('Existing environment preserved; update APP_IMAGE explicitly for upgrades')
-if len(sys.argv) != 2 or not sys.argv[1].startswith('raastdemo:v0.1.0-'):
+if len(sys.argv) != 2 or not re.fullmatch(r'raastdemo:v[0-9]+\.[0-9]+\.[0-9]+-[a-zA-Z0-9]+', sys.argv[1]):
     raise SystemExit('Expected versioned app image')
 values = {
     'APP_IMAGE': sys.argv[1],
