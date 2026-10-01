@@ -26,7 +26,7 @@ flowchart LR
 - **Server routes:** input validation, session ownership, idempotency, limits, provider request construction, and normalized response delivery. Merchant and till/terminal values come from server configuration, not visitor input.
 - **Provider adapter:** isolates authentication, request mapping, QR normalization, title-fetch parsing, RTP submission, callback verification, and status translation. Live and mock adapters use explicit environment configuration; failures never silently fall back to mock success.
 - **Database:** authoritative transaction state, context, callback deduplication, idempotency, and distributed rate counters. Do not store authoritative state in function memory or local filesystem.
-- **Secrets:** local ignored environment files or Vercel server-only environment variables. No `NEXT_PUBLIC_` secret variables. Preview deployments use separate mock/test configuration and database isolation.
+- **Secrets:** local ignored environment files or restricted host environment files. No `NEXT_PUBLIC_` secret variables. Preview deployments use separate mock/test configuration and database isolation.
 
 Use short HTTP requests and persisted state, not a function held open for the 120-second countdown. PostgreSQL connections use a provider-supported pooled connection string. No WebSocket service or durable background worker is required for the first implementation.
 
@@ -216,7 +216,7 @@ Validate PKR values server-side, enforce inclusive 100–10000 paisa defaults, a
 
 Require HTTPS, same-origin mutation requests, session ownership checks and no wildcard CORS. Return only masked payer references and safe application messages. Status responses must not leak account titles or provider IDs to another session. Keep QR representations scoped to their transaction and expiry.
 
-`.gitignore` excludes local secrets, Postman exports and logs. A content scan and staged-diff review remain mandatory because ignored filenames do not prevent secrets inside tracked Markdown or code. `.env.example` contains placeholders only. Use Vercel sensitive environment variables for secrets and separate production/preview configuration. Review deployed browser assets and error logs for accidental exposure in the implementation phase.
+`.gitignore` excludes local secrets, Postman exports and logs. A content scan and staged-diff review remain mandatory because ignored filenames do not prevent secrets inside tracked Markdown or code. `.env.example` contains placeholders only. Use a mode-600 host environment file for secrets and separate production/preview configuration. Review deployed browser assets and error logs for accidental exposure in the implementation phase.
 
 ## 8. Deployment and operations design
 
@@ -228,7 +228,7 @@ Monitor initiation errors/timeouts, invalid callbacks, duplicate/unmatched/confl
 
 Rollback disables new live initiation while retaining the callback route, database and status reads for in-flight attempts. Roll back application deployments only with schema compatibility checked. Never remove callback acceptance merely because the public page is disabled.
 
-Platform references: [Vercel Functions](https://vercel.com/docs/functions), [environment variables](https://vercel.com/docs/environment-variables), and [sensitive environment variables](https://vercel.com/docs/environment-variables/sensitive-environment-variables). These describe platform capabilities, not verification of this project's deployment.
+Platform reference: [Next.js self-hosting](https://nextjs.org/docs/app/guides/self-hosting). See the deployment guide for the Azure Compose configuration and release evidence.
 
 ## 9. Acceptance and verification plan
 
@@ -266,4 +266,4 @@ Documentation-pass checks: Markdown links resolve, JSON examples parse, placehol
 
 Accepted decisions: private GitHub repository, public eventual live demo, one configured merchant, QR and RTP, Next.js/TypeScript/Azure VM, PostgreSQL, browser polling, server-only credentials, default amount/rate limits, and documentation before implementation.
 
-Provider checklist P01–P10 remains the source of live integration blockers. In particular, response parsing, callback verification/status mapping, amount units, timezone, reference rules, and RTP ancillary fields need evidence. The `rtpId` origin and exact field path are resolved by user confirmation and supplied payloads; lifecycle remains unresolved. The newer RTP request uses v2 while the original collection uses v1; resolve that discrepancy before selecting a live path. Vendor selection for managed PostgreSQL and actual Vercel provisioning are later deployment decisions; neither is needed to complete or verify this documentation pass.
+Provider checklist P01–P10 remains the source of live integration blockers. In particular, response parsing, callback verification/status mapping, amount units, timezone, reference rules, and RTP ancillary fields need evidence. The `rtpId` origin and exact field path are resolved by user confirmation and supplied payloads; lifecycle remains unresolved. The newer RTP request uses v2 while the original collection uses v1; resolve that discrepancy before selecting a live path. The simulation uses PostgreSQL 16 in the dedicated Azure Compose project. Provider integration remains separate from the deployed simulation.
