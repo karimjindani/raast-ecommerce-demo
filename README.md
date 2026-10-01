@@ -1,6 +1,6 @@
 # RAAST E-commerce Demo
 
-Version **v0.1.0** — Next.js/TypeScript simulation for the Azure VM at `20.84.97.186`, intended for `https://raastdemo.paysyslabs.com`.
+Version **v0.1.1** — Next.js/TypeScript simulation for the Azure VM at `20.84.97.186`, intended for `https://raastdemo.paysyslabs.com`.
 
 ## Experience
 
@@ -14,6 +14,7 @@ No live Tapsys adapter or credentials are deployed. Live callback routes are dis
 ## Documentation
 
 - [Deployment and operations](docs/deployment.md)
+- [v0.1.1 branding release](docs/release-v0.1.1.md)
 - [v0.1.0 release evidence and publication status](docs/release-v0.1.0.md)
 - [Software design](docs/software-design.md)
 - [Merchant connectivity model](docs/software-design.md#merchant-connectivity-and-deployment-model)
