@@ -18,4 +18,3 @@ Migration 002 adds nullable payer type, masked reference and fictional title col
 - Previous image `raastdemo:v0.1.1-c5f3795` retained. Existing site response checks remained unchanged: paysyslabs.com 200, IP default 503, LadiesFund portal 502. The latter two failures predated this release.
 
 Public DNS still has no A record at the deployment check, so HTTPS publication remains pending DNS/certificate setup. The SSH preview remains `http://localhost:3100`. No real payments or live account lookup are enabled.
-
