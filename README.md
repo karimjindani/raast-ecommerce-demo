@@ -14,6 +14,7 @@ No live Tapsys adapter or credentials are deployed. Live callback routes are dis
 ## Documentation
 
 - [Deployment and operations](docs/deployment.md)
+- [v0.1.0 release evidence and publication status](docs/release-v0.1.0.md)
 - [Software design](docs/software-design.md)
 - [Merchant connectivity model](docs/software-design.md#merchant-connectivity-and-deployment-model)
 - [Provider contract](docs/provider-api-contract.md)

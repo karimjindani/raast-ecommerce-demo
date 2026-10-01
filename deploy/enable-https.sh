@@ -18,6 +18,7 @@ systemctl reload nginx
 # Only after HTTPS is serving the intended site, enforce secure cookies and redirect.
 curl --fail --silent --resolve raastdemo.paysyslabs.com:443:127.0.0.1 https://raastdemo.paysyslabs.com/api/health
 sed -i 's/^COOKIE_SECURE=.*/COOKIE_SECURE=true/' "$base/.env"
+sed -i 's|^APP_BASE_URL=.*|APP_BASE_URL=https://raastdemo.paysyslabs.com|' "$base/.env"
 sed -i 's|^APP_ORIGINS=.*|APP_ORIGINS=https://raastdemo.paysyslabs.com|' "$base/.env"
 cd "$base"
 docker compose --env-file .env up -d --wait app
