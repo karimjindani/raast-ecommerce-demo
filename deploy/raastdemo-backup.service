@@ -1,0 +1,7 @@
+[Unit]
+Description=RAAST demo PostgreSQL backup and retention
+RequiresMountsFor=/backupfiles
+After=raastdemo.service
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /backupfiles/raastdemo/deploy/backup.sh

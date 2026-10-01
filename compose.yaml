@@ -1,0 +1,52 @@
+name: raastdemo
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: raastdemo
+      POSTGRES_USER: raastdemo
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?required}
+    volumes:
+      - type: bind
+        source: ${DATA_DIR:?required}
+        target: /var/lib/postgresql/data
+        bind:
+          create_host_path: false
+    networks: [private]
+    mem_limit: 256m
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U raastdemo -d raastdemo']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    logging: &logs
+      driver: json-file
+      options: {max-size: 5m, max-file: '3'}
+  app:
+    image: ${APP_IMAGE:?required}
+    environment:
+      DATABASE_URL: postgresql://raastdemo:${DB_PASSWORD}@db:5432/raastdemo
+      SESSION_SECRET: ${SESSION_SECRET:?required}
+      APP_BASE_URL: ${APP_BASE_URL:-https://raastdemo.paysyslabs.com}
+      APP_ORIGINS: ${APP_ORIGINS:-https://raastdemo.paysyslabs.com}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      PAYMENT_MODE: mock
+      LIVE_PAYMENTS_ENABLED: 'false'
+      NODE_OPTIONS: --max-old-space-size=320
+    ports: ['127.0.0.1:${APP_PORT:-3100}:3000']
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [private]
+    mem_limit: 512m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    logging: *logs
+networks:
+  private:
+    internal: true

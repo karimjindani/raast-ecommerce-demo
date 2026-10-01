@@ -1,0 +1,15 @@
+.git
+.next
+node_modules
+.env*
+!.env.example
+*.postman_collection.json
+*.postman_environment.json
+Tapsys-Gatway-Curl.txt
+private
+local-evidence
+releases
+test-results
+playwright-report
+coverage
+*.log

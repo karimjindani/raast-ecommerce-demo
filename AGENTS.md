@@ -32,4 +32,4 @@ The initial documentation baseline is unversioned. If no code version exists rem
 - Keep credentials, full customer IBANs, raw Postman exports, and sensitive payloads out of Git.
 - Sanitize staged content before commit and push; ignore rules are not content inspection.
 - Keep confirmed collection facts, user-confirmed details, proposed application behavior, and unresolved provider contracts distinct.
-- This first pass is documentation only. Do not describe planned features or tests as implemented or passed.
+- The initial documentation-only pass is complete. Application implementation and isolated Azure mock deployment are authorized. Describe only verified tests/deployment outcomes as passed.

@@ -1,12 +1,12 @@
 # RAAST E-commerce Demo — Software Design
 
-Status: unversioned design baseline, updated 1 October 2026. All behavior below is proposed, not implemented or tested. Provider evidence and unresolved contracts are tracked in the [API inventory](provider-api-contract.md).
+Status: v0.1.0 design, updated 1 October 2026. The simulation is implemented; provider-facing live behavior below remains proposed. See [deployment guide](deployment.md) for the released simulation behavior and operational scope. Provider evidence and unresolved contracts are tracked in the [API inventory](provider-api-contract.md).
 
 ## 1. Purpose and scope
 
 Provide a public, amount-driven payment page for one server-configured merchant. Visitors choose Dynamic QR or Request to Pay (RTP), initiate a PKR payment, and see authoritative callback-driven success or failure. No customer account registration is required; secure anonymous browser sessions isolate payment attempts.
 
-This first delivery is documentation and GitHub repository setup only. Subsequent development uses Next.js with TypeScript, server-side route handlers on Vercel, and managed PostgreSQL. Static QR is reference documentation only. Shopping carts, inventory, merchant onboarding, refunds, settlement reporting, and a public general-purpose provider API proxy are outside the demo scope.
+The initial documentation delivery is complete. This release implements Next.js with TypeScript, server-side route handlers on the Azure VM, and PostgreSQL in an isolated Compose project. Static QR is reference documentation only. Shopping carts, inventory, merchant onboarding, refunds, settlement reporting, and a public general-purpose provider API proxy are outside the demo scope.
 
 Application defaults: PKR 1–100 inclusive; QR lifetime 120 seconds; browser polling every two seconds; five initiation attempts per minute for each session and each IP. These are configurable application limits, not asserted provider capabilities.
 
@@ -14,9 +14,9 @@ Application defaults: PKR 1–100 inclusive; QR lifetime 120 seconds; browser po
 
 ```mermaid
 flowchart LR
-  Browser[Public checkout browser] -->|Same-origin HTTPS and session cookie| App[Next.js page and server routes on Vercel]
+  Browser[Public checkout browser] -->|Same-origin HTTPS and session cookie| App[Next.js page and server routes on the Azure VM]
   App -->|Server-only credentials| Provider[Tapsys API]
-  Provider -->|Authenticated callback| Hook[Callback routes on Vercel]
+  Provider -->|Authenticated callback| Hook[Callback routes on the Azure VM]
   App --> DB[(Managed PostgreSQL)]
   Hook --> DB
   Browser -->|Status poll every 2 seconds| App
@@ -69,7 +69,7 @@ flowchart LR
 - **Arrow legend:** solid arrows represent API requests; dashed arrows represent API responses returning along the same path.
 - **Payment callbacks:** the responses shown here are distinct from asynchronous payment callbacks, which remain covered by the application and checkout diagrams.
 - **Evidence boundary:** this topology comes from the supplied reference image; actual deployment and connectivity have not been independently verified.
-- **Vercel deployment:** the outbound connectivity configuration must satisfy this fixed-IP requirement before live integration. IP provisioning, Tapsys allowlist registration, and connectivity testing remain outstanding under [dependency P10](provider-api-contract.md#provider-clarification-checklist).
+- **Azure VM deployment:** the outbound connectivity configuration must satisfy this fixed-IP requirement before live integration. IP provisioning, Tapsys allowlist registration, and connectivity testing remain outstanding under [dependency P10](provider-api-contract.md#provider-clarification-checklist).
 
 ## 3. Checkout journeys
 
@@ -220,9 +220,9 @@ Require HTTPS, same-origin mutation requests, session ownership checks and no wi
 
 ## 8. Deployment and operations design
 
-Later implementation will connect the private GitHub repository to Vercel, provision a managed PostgreSQL database, apply reviewed migrations, and configure server-only environment variables. Use a stable production origin for provider callback registration; preview URLs must not become live callback destinations.
+The simulation deployment uses a locally built image transferred over SSH, the existing Apache/NGINX host, and PostgreSQL with data under `/backupfiles/raastdemo`. Apply reviewed migrations and restricted environment configuration. Use a stable production origin for provider callback registration; preview URLs must not become live callback destinations.
 
-Deployment sequence: validate mock behavior and tests; obtain provider contracts and approved connectivity; configure isolated integration credentials; register and verify callbacks; exercise both real flows with permitted test transactions; verify public limits and secret isolation; explicitly enable live initiation. Provider allowlisting or network restrictions must be checked before choosing final Vercel connectivity settings.
+Deployment sequence: validate mock behavior and tests; obtain provider contracts and approved connectivity; configure isolated integration credentials; register and verify callbacks; exercise both real flows with permitted test transactions; verify public limits and secret isolation; explicitly enable live initiation. Provider allowlisting or network restrictions must be checked before choosing final Azure outbound connectivity settings.
 
 Monitor initiation errors/timeouts, invalid callbacks, duplicate/unmatched/conflicting events, unresolved attempts, database errors, and rate-limit hits. Logs carry application request IDs and safe transaction references, not tokens, full IBANs or raw payloads. Manual operational review is sufficient for initial reconciliation; no admin dashboard is promised.
 
@@ -232,7 +232,7 @@ Platform references: [Vercel Functions](https://vercel.com/docs/functions), [env
 
 ## 9. Acceptance and verification plan
 
-No application tests have been executed in this documentation pass. The following matrix defines later implementation acceptance.
+The following matrix defines the full live-integration acceptance scope. The release record distinguishes executed simulation tests from unexecuted provider integration checks.
 
 | Scenario | Required result |
 |---|---|
@@ -264,6 +264,6 @@ Documentation-pass checks: Markdown links resolve, JSON examples parse, placehol
 
 ## 10. Open dependencies and decisions
 
-Accepted decisions: private GitHub repository, public eventual live demo, one configured merchant, QR and RTP, Next.js/TypeScript/Vercel, PostgreSQL, browser polling, server-only credentials, default amount/rate limits, and documentation before implementation.
+Accepted decisions: private GitHub repository, public eventual live demo, one configured merchant, QR and RTP, Next.js/TypeScript/Azure VM, PostgreSQL, browser polling, server-only credentials, default amount/rate limits, and documentation before implementation.
 
 Provider checklist P01–P10 remains the source of live integration blockers. In particular, response parsing, callback verification/status mapping, amount units, timezone, reference rules, and RTP ancillary fields need evidence. The `rtpId` origin and exact field path are resolved by user confirmation and supplied payloads; lifecycle remains unresolved. The newer RTP request uses v2 while the original collection uses v1; resolve that discrepancy before selecting a live path. Vendor selection for managed PostgreSQL and actual Vercel provisioning are later deployment decisions; neither is needed to complete or verify this documentation pass.
