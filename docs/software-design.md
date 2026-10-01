@@ -183,7 +183,7 @@ All browser POSTs require a same-origin check and `Idempotency-Key`. Reject miss
 | Endpoint | Input | Normalized successful output |
 |---|---|---|
 | `POST /api/payments/qr` | `amountPkr`: decimal string | `paymentId`, `status`, `qr` display descriptor, `expiresAt`, `serverTime` |
-| `POST /api/payments/title-fetch` | `amountPkr`, `memberId`, `iban` | `paymentId`, `contextId`, `accountTitle`, masked payer reference, amount, `contextExpiresAt` |
+| `POST /api/payments/title-fetch` | `amountPkr`, `scenario`, `payerType`, `payerValue` | `paymentId`, `contextId`, `accountTitle`, masked payer reference, amount, `contextExpiresAt` |
 | `POST /api/payments/rtp` | `contextId` | `paymentId`, `status`, `serverTime` |
 | `GET /api/payments/{id}` | Opaque application payment ID | `paymentId`, `flow`, `amountPaisa`, `currency`, `status`, `windowExpired`, `expiresAt` if applicable, `updatedAt`, `serverTime`; unexpired QR display descriptor for reload recovery |
 | `POST /api/webhooks/tapsys/payment-notification` | Supplied payment-notification shape; verification headers pending | Observed camelCase `responseCode`/`responseDesc` and `info`; reference echo and HTTP contract pending |
