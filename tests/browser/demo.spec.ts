@@ -1,10 +1,11 @@
 import {test,expect,request} from '@playwright/test';
 import pg from 'pg';
+const base=process.env.TEST_BASE_URL||'http://localhost:3100';
 const db=new pg.Pool({connectionString:process.env.DATABASE_URL});
 test.afterAll(async()=>db.end());
 test.beforeEach(async()=>{await db.query('TRUNCATE payment_events,idempotency,rate_limits,payments');});
 test('desktop checkout, QR success, and no external traffic',async({page})=>{
- const external:string[]=[];page.on('request',r=>{if(!r.url().startsWith('http://localhost:3100')&&!r.url().startsWith('data:'))external.push(r.url())});
+ const external:string[]=[];page.on('request',r=>{if(!r.url().startsWith(base)&&!r.url().startsWith('data:'))external.push(r.url())});
  await page.goto('/');await expect(page.getByRole('button',{name:'Generate demo QR'})).toBeEnabled();
  await page.screenshot({path:'test-results/checkout-desktop.png',fullPage:true});
  await page.getByRole('button',{name:'Generate demo QR'}).click();await expect(page).toHaveURL(/payments\//);
@@ -15,7 +16,7 @@ test('desktop checkout, QR success, and no external traffic',async({page})=>{
 });
 test('RTP title confirmation and failure',async({page})=>{
  await page.goto('/');await page.getByRole('button',{name:'Request to Pay'}).click();await page.selectOption('#scenario','failure');
- await page.getByRole('button',{name:'Fetch demo account title'}).click();await expect(page.getByText('CONFIRM YOUR DEMO PAYER')).toBeVisible();
+ await page.getByRole('button',{name:'Use demo example'}).click();await page.getByRole('button',{name:'Fetch account title'}).click();await expect(page.getByText('CONFIRM YOUR DEMO PAYER')).toBeVisible();
  await page.getByRole('button',{name:'Confirm & request payment'}).click();await expect(page.getByRole('heading',{name:'Waiting for demo approval'})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Payment unsuccessful'})).toBeVisible({timeout:18000});
 });
@@ -33,8 +34,8 @@ test('mobile no-confirmation view',async({page})=>{
  await page.screenshot({path:'test-results/qr-mobile.png',fullPage:true});
 });
 test('API isolation, idempotency, origin checks, limits and live callback guard',async()=>{
- const a=await request.newContext({baseURL:'http://localhost:3100'}),b=await request.newContext({baseURL:'http://localhost:3100'});await a.get('/api/session');await b.get('/api/session');
- const headers={Origin:'http://localhost:3100','Idempotency-Key':crypto.randomUUID()};const data={amountPkr:'10.00',scenario:'success'};
+ const a=await request.newContext({baseURL:base}),b=await request.newContext({baseURL:base});await a.get('/api/session');await b.get('/api/session');
+ const headers={Origin:base,'Idempotency-Key':crypto.randomUUID()};const data={amountPkr:'10.00',scenario:'success'};
  const r=await a.post('/api/payments/qr',{headers,data});expect(r.status()).toBe(201);const payment=await r.json();
  expect((await (await a.post('/api/payments/qr',{headers,data})).json()).paymentId).toBe(payment.paymentId);
  expect((await a.post('/api/payments/qr',{headers,data:{...data,amountPkr:'11'}})).status()).toBe(409);
@@ -48,9 +49,9 @@ test('API isolation, idempotency, origin checks, limits and live callback guard'
  await a.dispose();await b.dispose();
 });
 test('RTP context concurrent claim and foreign ownership',async()=>{
- const a=await request.newContext({baseURL:'http://localhost:3100'}),b=await request.newContext({baseURL:'http://localhost:3100'});await a.get('/api/session');await b.get('/api/session');
- const headers=()=>({Origin:'http://localhost:3100','Idempotency-Key':crypto.randomUUID()});
- const context=await(await a.post('/api/payments/title-fetch',{headers:headers(),data:{amountPkr:'5',scenario:'success',payerId:'demo-01'}})).json();
+ const a=await request.newContext({baseURL:base}),b=await request.newContext({baseURL:base});await a.get('/api/session');await b.get('/api/session');
+ const headers=()=>({Origin:base,'Idempotency-Key':crypto.randomUUID()});
+ const context=await(await a.post('/api/payments/title-fetch',{headers:headers(),data:{amountPkr:'5',scenario:'success',payerType:'raast-id',payerValue:'03000000000'}})).json();
  expect((await b.post('/api/payments/rtp',{headers:headers(),data:{contextId:context.contextId}})).status()).toBe(404);
  const responses=await Promise.all([a.post('/api/payments/rtp',{headers:headers(),data:{contextId:context.contextId}}),a.post('/api/payments/rtp',{headers:headers(),data:{contextId:context.contextId}})]);
  expect(responses.map(r=>r.status()).sort()).toEqual([201,409]);await a.dispose();await b.dispose();

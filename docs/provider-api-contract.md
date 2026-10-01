@@ -165,3 +165,17 @@ Obtain provider-supported verification and test vectors. Unverified callbacks ca
 | P10 | The supplied deployment reference image states that the partner must share a fixed public outbound IP with Tapsys for Cloudflare allowlisting; see the [merchant connectivity model](software-design.md#merchant-connectivity-and-deployment-model). Confirm approved environment and merchant/terminal provisioning, verify the Azure VM's fixed public outbound IP, register the IP with Tapsys, and test reachability. | The stated fixed-IP requirement is documented; actual IP provisioning, allowlist registration, and connectivity testing remain outstanding. No production connectivity or test authorization assumed. |
 
 These gaps do not block this design baseline. They block claiming verified live payment completion. No refunds, reversals API, settlement reporting, or status enquiry API is supplied in this collection.
+
+## RAAST ID lookup and PreRTPtitleFetch (user-confirmed flow)
+
+The user confirms that an 11-digit Pakistani mobile RAAST ID beginning with `03` must first undergo Alias-to-IBAN inquiry. Its returned IBAN then feeds PreRTPtitleFetch, whose RTP ID is used for RTP initiation. A directly supplied valid Pakistan IBAN skips alias inquiry.
+
+The demo implements this order locally with simulated results and no provider requests. Do not infer a provider URL or payload from the application's internal API.
+
+| Dependency | Required before live integration |
+|---|---|
+| P11 | Obtain Alias-to-IBAN URL, API version, authentication, request/response field paths, unresolved-alias meanings, and retry guarantees. |
+| P12 | Confirm whether PreRTPtitleFetch is the supplied `/api/v2/raast/titleFetch` operation or a different route/version. |
+| P13 | Confirm how `customerDetails.memberId` is obtained for alias-resolved and directly entered IBANs; do not assume bank letters equal the member ID. |
+
+Internal mock `POST /api/payments/title-fetch` now requires `payerType: "raast-id" | "iban"` and `payerValue` with the existing `amountPkr` and `scenario`. It returns the existing opaque context, fictional title and masked reference. Full entered identifiers and RTP IDs are never returned. Legacy fixture-only `payerId` requests receive validation errors; existing stored payment IDs and confirmation contexts remain readable/usable.

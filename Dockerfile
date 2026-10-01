@@ -11,7 +11,7 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 ARG COMMIT=development
 ENV APP_COMMIT=$COMMIT
-LABEL org.opencontainers.image.version="0.1.1" org.opencontainers.image.revision=$COMMIT
+LABEL org.opencontainers.image.version="0.1.2" org.opencontainers.image.revision=$COMMIT
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 COPY --from=builder --chown=app:app /app/.next/standalone ./
 COPY --from=builder --chown=app:app /app/.next/static ./.next/static

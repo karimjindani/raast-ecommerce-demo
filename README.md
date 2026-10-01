@@ -1,11 +1,11 @@
 # RAAST E-commerce Demo
 
-Version **v0.1.1** — Next.js/TypeScript simulation for the Azure VM at `20.84.97.186`, intended for `https://raastdemo.paysyslabs.com`.
+Version **v0.1.2** — Next.js/TypeScript simulation for the Azure VM at `20.84.97.186`, intended for `https://raastdemo.paysyslabs.com`.
 
 ## Experience
 
 - Dynamic QR with a 120-second window and a clearly non-payable QR payload.
-- Request to Pay with fictional payer selection, account-title confirmation, and session-bound context.
+- Request to Pay with RAAST ID or IBAN entry and simulated lookup, account-title confirmation, and session-bound context.
 - Success, failure, no confirmation, and late success scenarios with PostgreSQL persistence.
 - Visible “Demo—no real payment” labelling, session isolation, idempotency and rate limits.
 
@@ -14,6 +14,7 @@ No live Tapsys adapter or credentials are deployed. Live callback routes are dis
 ## Documentation
 
 - [Deployment and operations](docs/deployment.md)
+- [v0.1.2 RTP input release](docs/release-v0.1.2.md)
 - [v0.1.1 branding release](docs/release-v0.1.1.md)
 - [v0.1.0 release evidence and publication status](docs/release-v0.1.0.md)
 - [Software design](docs/software-design.md)

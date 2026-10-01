@@ -1,6 +1,6 @@
 # RAAST E-commerce Demo — Software Design
 
-Status: v0.1.0 design, updated 1 October 2026. The simulation is implemented; provider-facing live behavior below remains proposed. See [deployment guide](deployment.md) for the released simulation behavior and operational scope. Provider evidence and unresolved contracts are tracked in the [API inventory](provider-api-contract.md).
+Status: v0.1.2 design, updated 1 October 2026. The simulation is implemented; provider-facing live behavior below remains proposed. See [deployment guide](deployment.md) for the released simulation behavior and operational scope. Provider evidence and unresolved contracts are tracked in the [API inventory](provider-api-contract.md).
 
 ## 1. Purpose and scope
 
@@ -110,15 +110,46 @@ sequenceDiagram
 
 ### 3.2 Request to Pay
 
+The current mock release accepts `payerType` (`raast-id` or `iban`) and `payerValue`, replacing the fixture dropdown. RAAST IDs match `^03[0-9]{9}$`; Pakistan IBANs normalize spaces/case and validate 24-character structure and MOD-97 checksum. Both client and server validate. Examples are synthetic and no account existence is checked.
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant S as Server
+  participant M as Local mock provider
+  participant D as PostgreSQL
+  B->>S: title-fetch(amount, scenario, payerType, payerValue)
+  alt RAAST ID
+    S->>M: Alias-to-IBAN inquiry
+    M-->>S: Synthetic IBAN
+  end
+  S->>M: PreRTPtitleFetch(IBAN)
+  M-->>S: Simulated title, masked reference, RTP ID
+  S->>D: Store session-bound context and RTP ID
+  S-->>B: Title, masked reference, opaque context ID
+  B->>S: Confirm RTP(context ID)
+  S->>D: Lock valid unconsumed context
+  S->>M: Initiate using stored RTP ID
+  S->>D: Persist scheduled simulation outcome
+```
+
+Raw mobile numbers and IBANs are never persisted or logged. Idempotency stores an HMAC of normalized request details. Only a masked account reference, fictional title, payer type and simulated RTP ID are retained; migration 002 adds nullable columns without changing historical payments. Confirmation remains valid for five minutes and may be consumed once. Editing payer type/value, amount or scenario resets the UI confirmation. Alias failure stops title fetch; title failure or missing RTP ID stops initiation. All lookup results explicitly describe simulation.
+
+The following diagram describes the future live integration, whose provider contracts remain pending. PreRTPtitleFetch is the user-provided operation name; its exact mapping to the supplied `/api/v2/raast/titleFetch` route is not yet verified.
+
 ```mermaid
 sequenceDiagram
   participant B as Browser
   participant S as Server routes
   participant D as PostgreSQL
   participant T as Tapsys
-  B->>S: POST /api/payments/title-fetch (amount, memberId, IBAN)
+  B->>S: POST /api/payments/title-fetch (amount, payerType, payerValue)
   S->>D: Persist session-bound attempt
-  S->>T: Title fetch
+  opt Payer supplied a RAAST ID
+    S->>T: Alias-to-IBAN inquiry (contract pending)
+    T-->>S: Resolved IBAN
+  end
+  S->>T: PreRTPtitleFetch (route mapping pending)
   T-->>S: Account title and rtpId
   S->>D: Store protected rtpId and bound context
   S-->>B: Display title and opaque context ID
