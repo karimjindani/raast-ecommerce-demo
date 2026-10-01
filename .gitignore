@@ -16,6 +16,7 @@ id_rsa*
 id_ed25519*
 
 # Raw API exports and sensitive integration evidence.
+Tapsys-Gatway-Curl.txt
 *.postman_collection.json
 *.postman_environment.json
 *.postman_globals.json

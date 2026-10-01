@@ -1,6 +1,6 @@
 # RAAST E-commerce Demo — Software Design
 
-Status: initial unversioned design baseline, 30 September 2026. All behavior below is proposed, not implemented or tested. Provider evidence and unresolved contracts are tracked in the [API inventory](provider-api-contract.md).
+Status: unversioned design baseline, updated 1 October 2026. All behavior below is proposed, not implemented or tested. Provider evidence and unresolved contracts are tracked in the [API inventory](provider-api-contract.md).
 
 ## 1. Purpose and scope
 
@@ -16,7 +16,7 @@ Application defaults: PKR 1–100 inclusive; QR lifetime 120 seconds; browser po
 flowchart LR
   Browser[Public checkout browser] -->|Same-origin HTTPS and session cookie| App[Next.js page and server routes on Vercel]
   App -->|Server-only credentials| Provider[Tapsys API]
-  Provider -->|Authenticated callback| Hook[Callback route on Vercel]
+  Provider -->|Authenticated callback| Hook[Callback routes on Vercel]
   App --> DB[(Managed PostgreSQL)]
   Hook --> DB
   Browser -->|Status poll every 2 seconds| App
@@ -103,7 +103,7 @@ sequenceDiagram
 1. Visitor selects QR and enters a decimal PKR amount. Parse as a decimal string into integer paisa; reject nonpositive amounts, scientific notation, nonnumeric input, excess fractional digits, and configured limit violations. Never use binary floating-point arithmetic for money.
 2. Validate session, same-origin request and limits; persist the attempt and references before contacting the provider. Set server-created expiry to creation time plus 120 seconds.
 3. Submit the provider request with correctly converted amount and confirmed timezone format. Provider units and formatting remain integration prerequisites.
-4. Normalize the verified QR response to QR text rendered by a trusted encoder, or validated image content served from the application. Never inject provider HTML/SVG markup or blindly fetch arbitrary provider-supplied URLs. The actual supported representation is selected after P03 is resolved.
+4. Normalize the verified QR response to QR text rendered by a trusted encoder, or validated image content served from the application. Never inject provider HTML/SVG markup or blindly fetch arbitrary provider-supplied URLs. The supplied response establishes `info.qrString`; use this text with a trusted QR encoder. `info.qrImage` is also supplied, but the sample image content appears abbreviated.
 5. Return remaining lifetime using server time and absolute expiry; provider latency reduces the display window. Do not restart the countdown on browser reload. If already expired, do not display the QR as payable. If the provider returns an earlier expiry, use the earlier confirmed expiry.
 6. Poll while pending and before expiry; prevent overlapping requests, pause while hidden, and refresh immediately on visibility return. Transient status errors use capped backoff up to ten seconds, then resume the normal interval after recovery. Do not interpret a network error as payment failure.
 7. At expiry, hide the QR and stop automatic polling. Display “Payment window expired—confirmation pending” if unresolved, offer manual status refresh and a deliberate new-attempt action. Warn that a new attempt does not cancel the old payment. Continue accepting verified late callbacks.
@@ -135,7 +135,7 @@ sequenceDiagram
   S-->>B: Confirmed outcome
 ```
 
-The user confirms that title fetch returns `rtpId`. Its exact field path, lifetime and reuse contract are not supplied. The server retains that identifier and sends only an opaque context ID to the browser alongside the display title, amount and masked payer reference.
+The user confirms the title-fetch linkage, and newer supplied payloads establish `info.rtpId` and `customerDetails.accountTitle`. Identifier lifetime and reuse remain unverified. The server retains that identifier and sends only an opaque context ID to the browser alongside the display title, amount and masked payer reference.
 
 Bind the context to the originating session, attempt, normalized amount, currency and payer selection. Amount or payer changes invalidate the context and require a new title fetch. Missing title or identifier prevents confirmation and RTP submission. A local maximum context age of five minutes is proposed; use a shorter confirmed provider lifetime where applicable. This local maximum does not establish provider validity.
 
@@ -155,7 +155,8 @@ All browser POSTs require a same-origin check and `Idempotency-Key`. Reject miss
 | `POST /api/payments/title-fetch` | `amountPkr`, `memberId`, `iban` | `paymentId`, `contextId`, `accountTitle`, masked payer reference, amount, `contextExpiresAt` |
 | `POST /api/payments/rtp` | `contextId` | `paymentId`, `status`, `serverTime` |
 | `GET /api/payments/{id}` | Opaque application payment ID | `paymentId`, `flow`, `amountPaisa`, `currency`, `status`, `windowExpired`, `expiresAt` if applicable, `updatedAt`, `serverTime`; unexpired QR display descriptor for reload recovery |
-| `POST /api/webhooks/tapsys` | Provider-defined raw body and headers | Provider-required acknowledgement, finalized after contract confirmation |
+| `POST /api/webhooks/tapsys/payment-notification` | Supplied payment-notification shape; verification headers pending | Observed camelCase `responseCode`/`responseDesc` and `info`; reference echo and HTTP contract pending |
+| `POST /api/webhooks/tapsys/notify-merchant` | Supplied notify-merchant shape; verification headers pending | Observed camelCase `responseCode`/`responseDesc` and `info`; HTTP contract pending |
 
 For new browser operations use 201 for completed creation, 202 for pending/ambiguous initiation, and 200 for status reads or a safe idempotent replay. Use 400 for malformed input, 403 for invalid origin/session, 404 for absent or foreign-session payment/context, 409 for incompatible idempotency reuse or consumed/expired context, 429 for limits, 502 for unusable provider responses, and 503 when live mode is unavailable. Errors expose a stable application error code, safe message and request ID, never provider credentials or raw payloads. Once provider acceptance is uncertain, return the persisted payment ID with an unresolved status rather than an error inviting resubmission.
 
@@ -194,6 +195,8 @@ Avoid long database transactions across external HTTP calls: persist intent and 
 Suggested demo retention: session access 24 hours; unused title-fetch contexts at most five minutes; redact/delete title and `rtpId` within 24 hours after submission or context expiry; retain normalized payment/event audit metadata for 30 days and then purge. These are proposed operational defaults, subject to the operator's actual retention requirements. Later implementation must provide a protected daily cleanup job and preserve unresolved reconciliation records until resolved. Do not persist full IBAN after title-fetch processing unless a verified provider requirement makes it necessary; protect any temporary retention.
 
 ## 6. Callback processing and reconciliation
+
+The [supplied payload evidence](provider-payload-evidence.md) establishes two distinct event shapes. Register the two proposed application callback URLs above with Tapsys; its sample `/paymentNotification` and `/notifyMerchant` paths do not establish mandatory deployed paths. Use a shared processor with an explicit event type. Payment notification has no status field; notify merchant shows only `RTP Accepted`. Neither is mapped to final success until provider semantics are confirmed. Receiver `responseDesc: "SUCCESS"` acknowledges processing, not payment completion. The samples reuse a message ID across event types: do not deduplicate on message ID alone without a provider guarantee.
 
 1. Read the exact raw body where required by the provider signature scheme. Apply payload limits and provider-supported authentication/replay checks before business processing. Do not invent a signature algorithm or treat an obscure URL as authentication.
 2. Parse using the confirmed schema; map status using an explicit allowlist. Unknown statuses cannot mark payments final.
@@ -238,7 +241,9 @@ No application tests have been executed in this documentation pass. The followin
 | QR reload/clock skew | Same session restores remaining time using server time; reload never resets lifetime. |
 | QR expiry | QR hidden; no automatic failed-payment classification; manual refresh remains available. |
 | Late callback | Verified late success updates the expired-window attempt. |
-| Title-fetch handoff | Returned `rtpId` is stored server-side and used in RTP; exact returned identifier is preserved. |
+| Title-fetch handoff | `info.rtpId` is stored server-side and sent as `paymentDetails.rtpId`; display `customerDetails.accountTitle`; preserve the exact returned identifier. |
+| Supplied response contracts | Parse snake_case API success fields and camelCase callback acknowledgements distinctly; time-only token expiry is not treated as an absolute timestamp. |
+| Callback type semantics | Keep notification types distinct even with a reused message ID; `RTP Accepted` cannot mark paid; reject assumed reference transformations. |
 | Missing/expired title context | No RTP call; user refetches title; changed amount/payer requires new context. |
 | Context theft/concurrency | Foreign session cannot use context; concurrent submissions result in at most one provider call. |
 | Idempotency | Same key and input replay existing attempt; different input conflicts; page double-click cannot create duplicate submission. |
@@ -261,4 +266,4 @@ Documentation-pass checks: Markdown links resolve, JSON examples parse, placehol
 
 Accepted decisions: private GitHub repository, public eventual live demo, one configured merchant, QR and RTP, Next.js/TypeScript/Vercel, PostgreSQL, browser polling, server-only credentials, default amount/rate limits, and documentation before implementation.
 
-Provider checklist P01–P10 remains the source of live integration blockers. In particular, response parsing, callback verification/status mapping, amount units, timezone, reference rules, and RTP ancillary fields need evidence. The `rtpId` origin is resolved by user confirmation, while its exact schema and lifecycle are not. Vendor selection for managed PostgreSQL and actual Vercel provisioning are later deployment decisions; neither is needed to complete or verify this documentation pass.
+Provider checklist P01–P10 remains the source of live integration blockers. In particular, response parsing, callback verification/status mapping, amount units, timezone, reference rules, and RTP ancillary fields need evidence. The `rtpId` origin and exact field path are resolved by user confirmation and supplied payloads; lifecycle remains unresolved. The newer RTP request uses v2 while the original collection uses v1; resolve that discrepancy before selecting a live path. Vendor selection for managed PostgreSQL and actual Vercel provisioning are later deployment decisions; neither is needed to complete or verify this documentation pass.

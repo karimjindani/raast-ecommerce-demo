@@ -16,6 +16,7 @@ Supported design journeys:
 - [Software design](docs/software-design.md): architecture, journeys, internal interfaces, storage, security, deployment, and acceptance matrix.
 - [Merchant connectivity and deployment model](docs/software-design.md#merchant-connectivity-and-deployment-model): partner-to-Tapsys network path and fixed public outbound IP requirement.
 - [Provider API contract](docs/provider-api-contract.md): collection-derived requests, sanitized examples, evidence boundaries, and live integration dependencies.
+- [Supplied payload evidence](docs/provider-payload-evidence.md): sanitized actual response and callback examples, confirmed mappings, and source discrepancies.
 - [Repository instructions](AGENTS.md): mandatory version allocation rules.
 
 ## Delivery phases
@@ -25,7 +26,7 @@ Supported design journeys:
 3. **Integration:** verify provider contracts, callback authentication, test merchant access, and end-to-end outcomes.
 4. **Deployment:** provision managed PostgreSQL and Vercel, configure server-only secrets and callback registration, validate, then enable public live initiation.
 
-The architecture and internal APIs are proposed designs, not implemented capabilities. The Postman collection contains no saved responses or callback contract. The title-fetch response supplying `rtpId` is user-confirmed; its response field path and lifecycle still need verification.
+The architecture and internal APIs are proposed designs, not implemented capabilities. The original Postman collection contains no saved responses, but the newer supplied cURL evidence establishes response paths and two callback shapes, including title-fetch `info.rtpId`. Callback authentication, final-status semantics, token expiry interpretation, RTP version and lifecycle rules still require verification.
 
 ## Configuration and secret handling
 
