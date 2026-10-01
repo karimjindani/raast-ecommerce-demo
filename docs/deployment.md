@@ -13,7 +13,7 @@ flowchart LR
   Apache[Existing Apache port 80] -->|ACME challenge and HTTPS redirect| Browser
 ```
 
-Dedicated Compose project `raastdemo`; no port 5432 publication and no public application port. The internal Docker network denies external provider access. Apache and NGINX keep existing sites. PostgreSQL and app memory caps are 256 MB and 512 MB. A systemd unit checks the mounted data disk before startup; containers intentionally have no independent boot restart policy. Inspect unhealthy services with `docker compose ps` and recover the scoped project, not other services.
+Dedicated Compose project `raastdemo`; no port 5432 publication and no public application port. The database is on an internal Docker network; the app also joins a bridge network so Docker can publish its localhost port. No live adapter or provider request code is included. Apache and NGINX keep existing sites. PostgreSQL and app memory caps are 256 MB and 512 MB. A systemd unit checks the mounted data disk before startup; containers intentionally have no independent boot restart policy. Inspect unhealthy services with `docker compose ps` and recover the scoped project, not other services.
 
 ## Build and local verification
 

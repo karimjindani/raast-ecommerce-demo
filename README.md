@@ -9,7 +9,7 @@ Version **v0.1.0** — Next.js/TypeScript simulation for the Azure VM at `20.84.
 - Success, failure, no confirmation, and late success scenarios with PostgreSQL persistence.
 - Visible “Demo—no real payment” labelling, session isolation, idempotency and rate limits.
 
-No live Tapsys adapter or credentials are deployed. Live callback routes are disabled. The internal container network has no external provider access. The public HTTPS deployment status is recorded separately from application test results in the release record.
+No live Tapsys adapter or credentials are deployed. Live callback routes are disabled. The database uses an internal network; the app has a separate bridge for its localhost-only port. No provider adapter or outbound provider request code is included. The public HTTPS deployment status is recorded separately from application test results in the release record.
 
 ## Documentation
 
